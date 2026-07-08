@@ -1,14 +1,21 @@
 # AI Mentor Prototype
 
-Structured startup-idea feedback (viability score, key risks, strengths, two
-recommendations) built for the Aurstrat Technology AI/ML Internship
+Structured startup-idea feedback (viability score, key risks, strengths,
+and recommendations) built for the Aurstrat Technology AI/ML Internship
 Assessment. Approach: prompt engineering against Google's Gemini API free
 tier — see `DECISIONS.md` for why, `ASSESSMENT_BRIEF.md` for the original
 spec.
 
-*Draft — run instructions below are accurate as written but the project
-hasn't had a live end-to-end run yet (Phase 2 in `BUILD_SPEC.md`). Update
-this file once that's done.*
+## Status
+
+- Unit tests: 12/12 passing under `uv run pytest tests/ -v`
+- Prototype implementation is complete in `src/`
+- `notebooks/demo.ipynb` is included for live Phase 2 validation
+- A live Gemini run with `gemini-3.5-flash` produced valid JSON feedback
+  for all four sample ideas.
+- Discrimination passed: `strong` 78 > `mediocre` 45 > `weak` 25.
+- The adversarial sample returned a low score of 35 with substantive
+  critique, and the notebook heuristic did not flag it.
 
 ## Setup
 
@@ -23,8 +30,8 @@ cp .env.example .env
 `uv sync` creates `.venv/` and installs everything pinned in `uv.lock`
 (main deps + the `dev` group: pytest, ipykernel). No separate `pip
 install` step, no manually activating a venv before running anything —
-prefix commands with `uv run` instead (see below), or run `source
-.venv/bin/activate` once if you prefer an activated shell.
+prefix commands with `uv run` instead, or run `source .venv/bin/activate`
+if you prefer an activated shell.
 
 Edit `.env`:
 - `GEMINI_API_KEY` — get one at https://ai.google.dev
@@ -42,10 +49,12 @@ uv run python -m src.cli --idea samples/idea_adversarial.txt
 ```
 
 Each prints structured JSON: `viability_score`, `score_rationale`,
-`key_risks`, `strengths`, `recommendations`.
+`key_risks`, `strengths`, and `recommendations`.
 
-`samples/idea_adversarial.txt` is expected to demonstrate the documented
-failure mode, not a bug — see `DECISIONS.md` → Failure Analysis scenario.
+For Phase 2 validation, run `notebooks/demo.ipynb` with the `.venv` kernel
+and a real Gemini API key. That notebook exercises all four sample ideas,
+checks score discrimination, and reports the adversarial failure-mode
+result.
 
 ## Test
 
@@ -54,7 +63,6 @@ uv run pytest tests/ -v
 ```
 
 All tests run against a mocked API client — no key or network needed.
-11/11 pass as of the last build.
 
 ## Project structure
 

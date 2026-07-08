@@ -74,3 +74,26 @@ def test_evaluate_idea_retries_then_raises_on_persistent_bad_output():
     with pytest.raises(MentorOutputError):
         evaluate_idea(VALID_IDEA, settings=_settings(), client=client, max_validation_retries=1)
     assert client.models.generate_content.call_count == 2  # initial + 1 retry
+
+
+def test_evaluate_idea_extracts_json_from_surrounding_text():
+    wrapped_json = (
+        "Here is the analysis:\n"
+        "{\n"
+        "  \"viability_score\": 72,\n"
+        "  \"score_rationale\": \"The idea is coherent and addresses a clear clinic pain point.\",\n"
+        "  \"key_risks\": [\"Integration complexity\", \"Limited initial demand\"],\n"
+        "  \"strengths\": [\"Clear target user\", \"Practical pricing model\"],\n"
+        "  \"recommendations\": [\n"
+        "    {\"title\": \"Validate demand\", \"detail\": \"Run 5 paid pilot tests with single-location clinics.\"},\n"
+        "    {\"title\": \"Simplify launch\", \"detail\": \"Start with calendar reminders before building rescheduling flow.\"}\n"
+        "  ]\n"
+        "}\n"
+        "Thank you."
+    )
+    client = _mock_client(wrapped_json)
+
+    feedback = evaluate_idea(VALID_IDEA, settings=_settings(), client=client)
+
+    assert feedback.viability_score == 72
+    assert feedback.recommendations[0].title == "Validate demand"

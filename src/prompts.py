@@ -25,6 +25,9 @@ Return:
 - 2 to 4 key_risks
 - 2 to 4 strengths
 - exactly 2 recommendations, each with a title and one concrete, actionable detail (not generic advice like "do more research")
+
+Output only valid JSON. The response must be a single JSON object with exactly these fields: `viability_score`, `score_rationale`, `key_risks`, `strengths`, and `recommendations`.
+Do not include any surrounding explanation, markdown, or extra text outside the JSON object.
 """
 
 

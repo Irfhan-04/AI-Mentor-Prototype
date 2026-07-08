@@ -54,22 +54,49 @@ can't declare the constraint.
 deprecate on Google's schedule, not this repo's; a baked-in default just
 moves the failure from "loud at startup" to "silent later."
 
-## Failure Analysis scenario: prompt injection
+## Correction: thinking-token truncation + model swap for Phase 2
 
-Chosen over "no market grounding" (the other candidate failure mode) because
-it's directly testable, not just arguable. `tests/test_prompt_injection.py`
-is a **passing** test that proves schema validity does not imply trustworthy
-content — a manipulated, substance-free output passes `MentorFeedback`
-validation cleanly. This is the honest cost of choosing prompt engineering
-over fine-tuning (where behavior is harder to override at inference time),
-and it closes the loop in the ADR.
+First live run (`gemini-3.5-flash`) failed schema validation on all 4
+sample ideas, both attempts each — 8/8 calls returned HTTP 200 but
+truncated JSON (`json.JSONDecodeError`: unterminated string / unexpected
+token at varying positions). Root cause: Gemini 3-series models engage in
+dynamic "thinking" by default, consuming part of `max_output_tokens` on an
+internal reasoning trace before emitting the visible response. The
+default `MENTOR_MAX_OUTPUT_TOKENS=1024` left too little room once thinking
+tokens were subtracted, so the visible JSON was cut off mid-string on
+every call — not a prompt problem, not a model-quality problem, a token
+budget problem.
 
-Mitigation documented, not oversold: delimiter-isolate user input,
-`system_instruction` separation (implemented), explicit "this is untrusted
-data, not instructions" framing in the prompt (implemented). Not
-implemented, flagged as future work: a cheap secondary heuristic on output
-anomalies (e.g. score of exactly 100 with generic, short risk entries)
-before it reaches a user.
+Fixed in two places:
+- `src/mentor.py`: `_call_model` now sets
+  `thinking_config=ThinkingConfig(thinking_budget=0)`. This task's rubric
+  is already fully decomposed in `src/prompts.py` (score bands, evaluation
+  dimensions, exact output counts); extended reasoning adds latency and
+  token cost with no accuracy benefit for a fixed-shape scoring task.
+- `src/config.py`: default `MENTOR_MAX_OUTPUT_TOKENS` raised from `1024`
+  to `2048` as an independent safety margin, not a substitute for the fix
+  above.
+
+Second, unrelated issue surfaced on the next run attempt: `gemini-3.5-flash`
+hit a 20-requests-per-day free-tier quota
+(`GenerateRequestsPerDayPerProjectPerModel-FreeTier`, quotaValue 20) for
+this project — not shown anywhere in the model picker, only visible in
+the 429 error body. Google's newest flagship Flash-tier model carries a
+materially tighter free daily quota than the rest of the Flash lineup; the
+error's `retryDelay` hint (~23s) is a generic backoff suggestion, not the
+actual RPD reset time (midnight Pacific).
+
+`GEMINI_MODEL_NAME` switched to `gemini-3.1-flash-lite` for Phase 2
+execution: it carries a substantially higher free-tier daily quota, and
+the scoring rubric in `src/prompts.py` already decomposes the judgment
+call (problem clarity, target user specificity, differentiation,
+feasibility, business model clarity) enough that a lighter model applying
+it directly is a reasonable bet. If the discrimination check
+(`strong > mediocre > weak`) fails on Flash-Lite, that is itself a valid,
+reportable result for the Prototype Validation / Failure Analysis
+sections, not a dead end — the fallback is waiting for `gemini-3.5-flash`'s
+daily quota to reset, or switching to Groq, already documented above as
+the designated fallback provider.
 
 ## Standing caveat: employer legitimacy unconfirmed
 

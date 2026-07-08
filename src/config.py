@@ -43,7 +43,14 @@ def load_settings() -> Settings:
 
     try:
         temperature = float(os.environ.get("MENTOR_TEMPERATURE", "0.4"))
-        max_output_tokens = int(os.environ.get("MENTOR_MAX_OUTPUT_TOKENS", "1024"))
+        # 1024 was the original default and proved too low against a
+        # Gemini 3-series model with dynamic thinking enabled by default --
+        # thinking tokens consumed the budget before the visible JSON
+        # finished, truncating every response. Raised as a safety margin;
+        # see DECISIONS.md -> Correction: thinking-token truncation. The
+        # actual fix is disabling thinking in src/mentor.py -- this default
+        # is a second line of defense, not a substitute for that.
+        max_output_tokens = int(os.environ.get("MENTOR_MAX_OUTPUT_TOKENS", "2048"))
         request_timeout_s = float(os.environ.get("MENTOR_REQUEST_TIMEOUT_S", "30"))
     except ValueError as exc:
         raise ConfigError(f"Invalid numeric setting in environment: {exc}") from exc
