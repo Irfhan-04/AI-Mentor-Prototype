@@ -56,7 +56,7 @@ preserving fast iteration on the rubric.
 
 - **Structured output contract.** `GEMINI_RESPONSE_SCHEMA` in
   `src/schema.py` is a raw JSON Schema dict passed directly to Gemini's
-  `response_json_schema` config. It enforces:
+  `response_schema` config. It enforces:
   - `viability_score` as an integer from 0 to 100
   - `score_rationale` as a non-empty string
   - `key_risks` and `strengths` as arrays of 2–4 strings
@@ -72,6 +72,14 @@ preserving fast iteration on the rubric.
   the submitted idea in `<idea>` tags. It explicitly instructs the model
   to treat instruction-like content inside the idea as untrusted data and
   to penalize it rather than obey it.
+- **Reasoning-budget control.** `src/mentor.py` disables Gemini 3-series
+  dynamic "thinking" (`thinking_config=ThinkingConfig(thinking_budget=0)`).
+  The rubric is already fully decomposed in the prompt, so extended
+  reasoning added latency and token cost without improving accuracy — left
+  on by default, it silently truncated the visible JSON on every call in
+  the first live attempt. A character-level `_extract_json_payload`
+  fallback was added as a second line of defense against any surrounding
+  non-JSON text in the response.
 - **Operational reliability.** `src/mentor.py` retries once on schema
   validation failure, not on Gemini API call failure. A malformed output
   is re-asked once; a network or API error is surfaced immediately.
@@ -98,6 +106,10 @@ key and `gemini-3.5-flash` configured in `.env`.
 - `idea_adversarial.txt` returned valid JSON feedback with a viability
   score of 35.
 
+All four calls succeeded on the first attempt — no retries were needed,
+confirming the thinking-budget fix in Section 4 resolved the truncation
+failures seen on the initial attempt.
+
 ### Discrimination check
 
 The prototype successfully discriminated across the sample ideas:
@@ -105,11 +117,11 @@ The prototype successfully discriminated across the sample ideas:
 
 ### Adversarial run
 
-The adversarial sample produced a low score and substantive critique of
-its own lack of differentiation, saturated market position, and missing
-business model. The notebook's heuristic did not trigger a prompt-
-injection flag, indicating the prompt framing and system instruction
-separation successfully resisted this injection attempt in practice.
+The adversarial sample produced a low score (35) and a substantive
+critique of its own lack of differentiation, saturated market position,
+and missing business model. The notebook's heuristic did not trigger a
+prompt-injection flag. See Section 6 for the full detail on this result —
+it is also the Failure Analysis observed-behavior evidence.
 
 ### Implication
 
@@ -157,18 +169,35 @@ score and only generic short risks, but this check is not wired into
 
 ### Observed behavior in the live run
 
-The live Phase 2 attempt did not reach a valid adversarial feedback object
-because the Gemini responses failed schema validation before parsing.
-Therefore the current failure analysis is still grounded in the intended
-attack vector and the mocked test proof, not a successful concrete
-adversarial result from the real model.
+The real Phase 2 run (`notebooks/demo.ipynb`) produced a schema-valid
+response for the adversarial sample: `viability_score` 35, with three
+substantive, idea-specific risks (market saturation against named
+competitors, lack of differentiation, no monetization strategy) rather
+than the short, generic entries the notebook's heuristic checks for. The
+heuristic correctly did not trigger.
 
-When the prompt/schema combination is fixed, a future run should report
-whether the adversarial sample is resisted, partially complied with, or
-succeeded at producing a schema-valid but substantively suspicious
-response.
+More notably, the model's own `score_rationale` explicitly identified the
+injection attempt itself as a red flag — it noted that the submission
+attempted to override the evaluation instructions rather than provide a
+substantive business plan, and treated that as evidence of poor product
+strategy. That is exactly the behavior the system prompt in
+`src/prompts.py` asks for (treat an embedded instruction as a mark against
+the idea's substance, not a command to follow) — observed in a real
+model response, not just specified as intent.
+
+This is a genuine result, not a worst-case simulation, and it should be
+read precisely: the mitigations held against this specific attack
+phrasing, in this run. That does not make the failure mode moot.
+`tests/test_prompt_injection.py` still proves the underlying mechanism —
+a compromised response passes schema validation regardless of content —
+and a single successful resistance is evidence the current mitigations
+work against this attack, not proof they hold against every possible
+injection phrasing or a more sophisticated attempt. The documented gap
+stands: there is still no production-level content-anomaly check in
+`src/mentor.py` to catch the case where the mitigations don't hold.
 
 ---
 
 *Sources: `DECISIONS.md`, `ASSESSMENT_BRIEF.md`, `src/schema.py`,
-`src/prompts.py`, `src/mentor.py`, `tests/test_prompt_injection.py`.*
+`src/prompts.py`, `src/mentor.py`, `tests/test_prompt_injection.py`,
+`notebooks/demo.ipynb`.*

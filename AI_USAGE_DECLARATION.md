@@ -29,24 +29,32 @@ Human-reviewed and corrected:
   `tests/test_prompt_injection.py`
 - The live validation status and outcome reporting in
   `ARCHITECTURE_DECISION_REPORT.md`
-- A follow-up code fix to use `response_json_schema` and a JSON extraction
-  fallback in `src/mentor.py` after the initial Phase 2 attempt
+- A follow-up fix in `src/mentor.py` after the first Phase 2 attempt
+  failed on all four samples: Gemini 3-series dynamic "thinking" was
+  consuming `max_output_tokens` before the visible JSON completed,
+  truncating every response. Fixed by disabling thinking
+  (`thinking_config=ThinkingConfig(thinking_budget=0)`) and adding a
+  character-level `_extract_json_payload` fallback as a second line of
+  defense, with a new test (`test_evaluate_idea_extracts_json_from_surrounding_text`)
+  covering it.
 
 ## Live validation status
 
 A local Phase 2 validation attempt was performed with a real
 `GEMINI_API_KEY` and `GEMINI_MODEL_NAME` using `gemini-3.5-flash`.
-All four sample evaluations produced valid JSON model outputs on first
-try.
+All four sample evaluations produced valid JSON model outputs on the
+first attempt, with no retries needed.
 
 - `strong` returned a viability score of 78.
 - `mediocre` returned a viability score of 45.
 - `weak` returned a viability score of 25.
-- `adversarial` returned a viability score of 35 and correctly flagged the
-  input as generic, saturated, and lacking a differentiated business model.
+- `adversarial` returned a viability score of 35. Its `score_rationale`
+  explicitly identified the embedded injection attempt as a red flag
+  against the idea's substance, rather than complying with it.
 
 The notebook heuristic did not trigger a prompt-injection flag for the
-adversarial run.
+adversarial run — see `ARCHITECTURE_DECISION_REPORT.md` Section 6 for the
+full analysis of what this result does and does not prove.
 
 ## What was explicitly rejected from AI drafting
 
@@ -57,4 +65,5 @@ adversarial run.
 
 ## What is still pending
 
-- A final PDF export of the Architecture Decision Report.
+- Independent verification of the sending employer's legitimacy (see
+  `DECISIONS.md` → Standing caveat) before form submission.
