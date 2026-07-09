@@ -57,6 +57,6 @@ That's what you're for:
   `client`/`settings` so it can be tested with a mock -- see
   `tests/test_mentor.py` for the pattern.
 - Run `uv run pytest tests/ -v` before considering any change done.
-  All 11 existing tests must keep passing; if a change legitimately
+  All 12 existing tests must keep passing; if a change legitimately
   changes expected behavior, update the test and say why in the commit
   message, don't just delete it.

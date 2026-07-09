@@ -40,7 +40,7 @@ aurstrat-ai-mentor/
 
 Done: `src/*`, `tests/*`, `pyproject.toml` + `uv.lock`, `.env.example`, all
 4 sample ideas, `notebooks/demo.ipynb` (built and syntax-validated),
-`IMPLEMENTATION_GUIDE.md`, `AGENTS.md`. 11/11 tests pass under `uv run
+`IMPLEMENTATION_GUIDE.md`, `AGENTS.md`. 12/12 tests pass under `uv run
 pytest`, no network required. Dependency management migrated from
 pip/`requirements.txt` to `uv` — `uv sync --all-groups` replaces the old
 venv+pip setup, real `uv.lock` generated and verified against a live

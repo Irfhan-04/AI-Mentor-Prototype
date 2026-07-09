@@ -77,26 +77,16 @@ Fixed in two places:
   to `2048` as an independent safety margin, not a substitute for the fix
   above.
 
-Second, unrelated issue surfaced on the next run attempt: `gemini-3.5-flash`
-hit a 20-requests-per-day free-tier quota
-(`GenerateRequestsPerDayPerProjectPerModel-FreeTier`, quotaValue 20) for
-this project — not shown anywhere in the model picker, only visible in
-the 429 error body. Google's newest flagship Flash-tier model carries a
-materially tighter free daily quota than the rest of the Flash lineup; the
-error's `retryDelay` hint (~23s) is a generic backoff suggestion, not the
-actual RPD reset time (midnight Pacific).
+Second, the first live run with `gemini-3.5-flash` exposed a
+thinking-token truncation issue. After disabling Gemini 3-series dynamic
+thinking and retrying, the successful Phase 2 execution used
+`gemini-3.5-flash` for all four sample ideas. The notebook logs confirm
+each call returned HTTP 200 and valid JSON on the first attempt, producing
+the validated scores.
 
-`GEMINI_MODEL_NAME` switched to `gemini-3.1-flash-lite` for Phase 2
-execution: it carries a substantially higher free-tier daily quota, and
-the scoring rubric in `src/prompts.py` already decomposes the judgment
-call (problem clarity, target user specificity, differentiation,
-feasibility, business model clarity) enough that a lighter model applying
-it directly is a reasonable bet. If the discrimination check
-(`strong > mediocre > weak`) fails on Flash-Lite, that is itself a valid,
-reportable result for the Prototype Validation / Failure Analysis
-sections, not a dead end — the fallback is waiting for `gemini-3.5-flash`'s
-daily quota to reset, or switching to Groq, already documented above as
-the designated fallback provider.
+`gemini-3.1-flash-lite` remains a documented quota-safe fallback for
+situations where `gemini-3.5-flash`'s daily free-tier allowance is
+unavailable, but it was not required for the final validated run.
 
 ## Standing caveat: employer legitimacy unconfirmed
 

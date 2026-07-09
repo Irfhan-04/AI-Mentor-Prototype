@@ -85,7 +85,7 @@ Edit `.env`:
 uv run pytest tests/ -v
 ```
 
-Expect 11/11 passing — these are all mocked, no network or credentials
+Expect 12/12 passing — these are all mocked, no network or credentials
 needed. If something fails here before you've changed anything, the
 environment is misconfigured (wrong Python version, missing dependency),
 not the code.
