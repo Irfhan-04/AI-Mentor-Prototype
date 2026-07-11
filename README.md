@@ -3,8 +3,8 @@
 Structured startup-idea feedback (viability score, key risks, strengths,
 and recommendations) built for the Aurstrat Technology AI/ML Internship
 Assessment. Approach: prompt engineering against Google's Gemini API free
-tier — see `DECISIONS.md` for why, `ASSESSMENT_BRIEF.md` for the original
-spec.
+tier — see `ARCHITECTURE_DECISION_REPORT.md` for the full comparison and
+rationale, `ASSESSMENT_BRIEF.md` for the original spec.
 
 ## Status
 
@@ -66,4 +66,9 @@ All tests run against a mocked API client — no key or network needed.
 
 ## Project structure
 
-See `BUILD_SPEC.md` for the full layout and current build status.
+- `src/` — implementation (`mentor.py`, `prompts.py`, `schema.py`, `config.py`, `cli.py`, `logging_config.py`)
+- `tests/` — 12 tests, all run against a mocked client, no network required
+- `samples/` — four evaluation ideas (strong / mediocre / weak / adversarial)
+- `notebooks/demo.ipynb` — live Gemini API run against all four samples
+- `ARCHITECTURE_DECISION_REPORT.md` / `.pdf` — comparison, recommendation, and failure analysis
+- `AI_USAGE_DECLARATION.md` — what was AI-drafted vs. human-reviewed

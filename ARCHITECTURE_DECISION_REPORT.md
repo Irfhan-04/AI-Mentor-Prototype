@@ -198,6 +198,5 @@ stands: there is still no production-level content-anomaly check in
 
 ---
 
-*Sources: `DECISIONS.md`, `ASSESSMENT_BRIEF.md`, `src/schema.py`,
-`src/prompts.py`, `src/mentor.py`, `tests/test_prompt_injection.py`,
-`notebooks/demo.ipynb`.*
+*Sources: `ASSESSMENT_BRIEF.md`, `src/schema.py`, `src/prompts.py`,
+`src/mentor.py`, `tests/test_prompt_injection.py`, `notebooks/demo.ipynb`.*
